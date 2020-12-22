@@ -5,6 +5,7 @@ from errbot import BotPlugin, botcmd, arg_botcmd, webhook
 import tailer
 
 from resolver import DNSCache
+from log import LogEntry
 
 CONFIG_TEMPLATE = {'LOG_FILE': '/does/not/exist'}
 
@@ -21,7 +22,7 @@ def log_thread(bot):
             bot.dns_cache.resolve(entry.dst_ip)
 
             # Give the DNS resolver a few seconds
-            time.sleep(2)
+            sleep(2)
 
             entry.src_hostname = bot.dns_cache.resolve(entry.src_ip)
             entry.dst_hostname = bot.dns_cache.resolve(entry.dst_ip)
