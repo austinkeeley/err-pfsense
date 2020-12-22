@@ -1,0 +1,10 @@
+[Core]
+name = pfsense
+module = pfsense
+
+[Documentation]
+description = An errbot plugin for displaying pfSense firewall logs
+
+[Python]
+version = 3
+
