@@ -2,15 +2,19 @@ import threading
 from time import sleep
 
 from errbot import BotPlugin, botcmd, arg_botcmd, webhook
+import tailer
 
 from resolver import DNSCache
 
+CONFIG_TEMPLATE = {'LOG_FILE': '/does/not/exist'}
+
 
 def log_thread(bot):
-    bot.send(bot.default_identifier, 'Starting thread')
+    bot.send(bot.default_identifier, f"Starting thread using {bot.config['LOG_FILE']}")
     bot.running = True
 
-    for line in tailer.follow(open('/var/log/firewalls/192.168.3.1/2020/12/192.168.3.1-2020-12.log', 'r')):
+    #for line in tailer.follow(open('/var/log/firewalls/192.168.3.1/2020/12/192.168.3.1-2020-12.log', 'r')):
+    for line in tailer.follow(open(bot.config['LOG_FILE'], 'r')):
         try:
             entry = LogEntry(line)
             bot.dns_cache.resolve(entry.src_ip)
@@ -68,9 +72,7 @@ class Pfsense(BotPlugin):
 
         You should delete it if your plugin doesn't use any configuration like this
         """
-        return {'EXAMPLE_KEY_1': "Example value",
-                'EXAMPLE_KEY_2': ["Example", "Value"]
-               }
+        return CONFIG_TEMPLATE
 
     def check_configuration(self, configuration):
         """
