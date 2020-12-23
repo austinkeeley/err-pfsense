@@ -1,3 +1,4 @@
+from itertools import chain
 import threading
 from time import sleep
 
@@ -7,25 +8,33 @@ import tailer
 from resolver import DNSCache
 from log import LogEntry
 
-CONFIG_TEMPLATE = {'LOG_FILE': '/does/not/exist'}
-
+CONFIG_TEMPLATE = {
+    'LOG_FILE': '/does/not/exist',  # pfSense log file to display
+    'DELAY': 2,                     # Delay, in seconds, to give the DNS resolver time to resolve
+    'REVERSE_DNS_LOOKUP': True      # Do reverse DNS lookup on IP addresses
+}
 
 def log_thread(bot):
+    if not bot.config:
+        bot.send(bot.default_identifier, 'Not configured')
+        return
+
     bot.send(bot.default_identifier, f"Starting thread using {bot.config['LOG_FILE']}")
     bot.running = True
 
-    #for line in tailer.follow(open('/var/log/firewalls/192.168.3.1/2020/12/192.168.3.1-2020-12.log', 'r')):
     for line in tailer.follow(open(bot.config['LOG_FILE'], 'r')):
         try:
             entry = LogEntry(line)
-            bot.dns_cache.resolve(entry.src_ip)
-            bot.dns_cache.resolve(entry.dst_ip)
 
-            # Give the DNS resolver a few seconds
-            sleep(2)
+            if bot.config.get('REVERSE_DNS_LOOKUP', True):
+                bot.dns_cache.resolve(entry.src_ip)
+                bot.dns_cache.resolve(entry.dst_ip)
 
-            entry.src_hostname = bot.dns_cache.resolve(entry.src_ip)
-            entry.dst_hostname = bot.dns_cache.resolve(entry.dst_ip)
+                # Give the DNS resolver a few seconds
+                sleep(bot.config.get('DELAY', 2))
+
+                entry.src_hostname = bot.dns_cache.resolve(entry.src_ip)
+                entry.dst_hostname = bot.dns_cache.resolve(entry.dst_ip)
             bot.send(bot.default_identifier, str(entry))
         except ValueError as e:
             print(e)
@@ -59,6 +68,13 @@ class Pfsense(BotPlugin):
         self.running = False   # is running and displaying
         self.dns_cache = DNSCache()
         self.dns_cache.start()
+
+    def configure(self, configuration):
+        if configuration is not None and configuration != {}:
+            config = dict(chain(CONFIG_TEMPLATE.items(), configuration.items()))
+        else:
+            config = CONFIG_TEMPLATE
+        super(Pfsense, self).configure(config)
 
     def deactivate(self):
         """
