@@ -71,7 +71,7 @@ class LogEntry(object):
         if self.ipv4_protocol_id == UDP:
             return f'{self.ipv4_protocol_text} {self.src_hostname if self.src_hostname else self.src_ip}:{self.src_port} --> {self.dst_hostname if self.dst_hostname else self.dst_ip}:{self.dst_port} -- rule {self.rule_num}'
         elif self.ipv4_protocol_id == TCP:
-            return f'{self.ipv4_protocol_text} {self.src_hostname if self.src_hostname else self.src_ip}:{self.src_port} --> {self.dst_hostname if self.dst_hostname else self.dst_ip}:{self.dst_port} -- rule {self.rule_num}'
+            return f'{self.ipv4_protocol_text} {self.src_hostname if self.src_hostname else self.src_ip}:{self.src_port} --> {self.dst_hostname if self.dst_hostname else self.dst_ip}:{self.dst_port} {self.tcp_flags} -- rule {self.rule_num}'
         elif self.ipv4_protocol_id == ICMP:
             return f'{self.ipv4_protocol_text} {self.src_hostname if self.src_hostname else self.src_ip} --> {self.dst_hostname if self.dst_hostname else self.dst_ip}, {self.icmp_type} -- rule {self.rule_num}'
 
