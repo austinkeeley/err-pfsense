@@ -29,8 +29,10 @@ def log_thread(bot):
             entry = parser.parse(line)
 
             if bot.config.get('REVERSE_DNS_LOOKUP', True):
-                bot.dns_cache.resolve(entry.src_ip)
-                bot.dns_cache.resolve(entry.dst_ip)
+                if entry.src_ip:
+                    bot.dns_cache.resolve(entry.src_ip)
+                if entry.dst_ip:
+                    bot.dns_cache.resolve(entry.dst_ip)
 
                 # Give the DNS resolver a few seconds
                 sleep(bot.config.get('DELAY', 2))
