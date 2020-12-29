@@ -37,8 +37,10 @@ def log_thread(bot):
                 # Give the DNS resolver a few seconds
                 sleep(bot.config.get('DELAY', 2))
 
-                entry.src_hostname = bot.dns_cache.resolve(entry.src_ip)
-                entry.dst_hostname = bot.dns_cache.resolve(entry.dst_ip)
+                if entry.src_ip:
+                    entry.src_hostname = bot.dns_cache.resolve(entry.src_ip)
+                if entry.dst_ip:
+                    entry.dst_hostname = bot.dns_cache.resolve(entry.dst_ip)
             bot.send(bot.default_identifier, str(entry))
         except ValueError as e:
             print(e)
