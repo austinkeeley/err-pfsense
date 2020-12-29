@@ -10,7 +10,6 @@ class LogParser:
 
     def parse(self, line):
         try:
-            #date, hostname, process, content = line.split(' ')
             tokens = line.split(' ')
             process = tokens[2]
             if process == 'filterlog:':
@@ -23,12 +22,14 @@ class LogParser:
             print(f'Could not parse line: {line}')
             return f'ERROR: Could not parse line {line}'
 
+
 class LogEntry:
     def __init__(self, line):
         self.line = line
 
     def __str__(self):
         return self.line
+
 
 class FirewallLogEntry(LogEntry):
 
@@ -87,8 +88,19 @@ class FirewallLogEntry(LogEntry):
         if self.ipv4_protocol_id == ICMP:
             self.icmp_type = next(fields)
 
-        self.src_hostname = resolver.resolve(self.src_ip)
-        self.dst_hostname = resolver.resolve(self.dst_ip)
+        if resolver:
+            self.src_hostname = resolver.resolve(self.src_ip, self.src_resolver_cb)
+            self.dst_hostname = resolver.resolve(self.dst_ip, self.dst_resolver_cb)
+        else:
+            self.src_hostname = None
+            self.dst_hostname = None
+
+    def src_resolver_cb(self, ip, hostname):
+        self.src_hostname = hostname
+
+    def dst_resolver_cb(self, ip, hostname):
+        self.dst_hostname = hostname
+
 
     def __str__(self):
         if self.ipv4_protocol_id == UDP:

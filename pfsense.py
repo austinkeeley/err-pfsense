@@ -22,11 +22,20 @@ def log_thread(bot):
 
     bot.send(bot.default_identifier, f"Starting thread using {bot.config['LOG_FILE']}")
     bot.running = True
-    parser = LogParser(bot.dns_cache)
 
-    for line in tailer.follow(open(bot.config['LOG_FILE'], 'r')):
+    if bot.config.get('REVERSE_DNS_LOOKUP', False):
+        parser = LogParser(bot.dns_cache)
+    else:
+        parser = LogParser(None)
+
+    for line in tailer.follow(open(bot.config.get('LOG_FILE'), 'r')):
         try:
             entry = parser.parse(line)
+
+            # Give the resolver a few seconds
+            sleep(bot.config.get('DELAY', 2))
+            print(entry)
+
         except Exception as e:
             print(e)
             raise e
@@ -65,6 +74,10 @@ class Pfsense(BotPlugin):
     def start_log(self, message, args):
         """Starts displaying the logs"""
         self.thread.start()
+
+    @botcmd
+    def stop_log(self, message, args):
+        pass
 
     def activate(self):
         """

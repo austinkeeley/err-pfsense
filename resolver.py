@@ -16,31 +16,39 @@ class DNSCache(object):
         t = threading.Thread(target=self.resolve_queue_thread)
         t.start()
 
-
     def resolve_queue_thread(self):
         print('Running resolve queue thread')
         while True:
-            ip_address = self.queue.get(True)
+            ip_address, cb = self.queue.get(True)
             print('Received request to resolve {}'.format(ip_address))
             rev_name = reversename.from_address(ip_address)
             try:
                 hostname = str(resolver.query(rev_name, "PTR")[0])
                 self.cache[ip_address] = (hostname, 'resolved')
                 print('Done resolving! {} --> {}'.format(ip_address, hostname))
+                if cb:
+                    cb(ip_address, hostname)
             except resolver.NoNameservers:
                 self.cache[ip_address] = (None, 'bad')
+                if cb:
+                    cb(ip_address, None)
             except dns.resolver.Timeout:
                 self.cache[ip_address] = (None, 'bad')
+                if cb:
+                    cb(ip_address, None)
             except dns.resolver.NXDOMAIN:
                 self.cache[ip_address] = (None, 'bad')
+                if cb:
+                    cb(ip_address, None)
 
 
-    def resolve(self, ip_address):
-        """Resolves an IP to an address"""
+    def resolve(self, ip_address, cb=None):
+        """Resolves an IP to an address. This either returns a hostname or
+        returns None and adds the IP address to the resolve queue."""
         entry = self.cache.get(ip_address, None)
 
         if not entry:
-            self.add_to_resolve_queue(ip_address)
+            self.add_to_resolve_queue(ip_address, cb)
             return None
 
         if entry[1] == 'queued' or entry[1] == 'bad':
@@ -49,10 +57,15 @@ class DNSCache(object):
         else:
             return entry[0]
 
-    def add_to_resolve_queue(self, ip_address):
+    def add_to_resolve_queue(self, ip_address, cb=None):
+        """Adds an IP address to the queue to be resolved asynchronously. 
+        Args:
+            ip_address - The IP to resolve
+            cb - Callback that will receive ip, hostname
+        """
         print('Adding {} to resolve queue'.format(ip_address))
         self.cache[ip_address] = (None, 'queued')
-        self.queue.put(ip_address)
+        self.queue.put((ip_address, cb))
 
 if __name__ == '__main__':
     cache = DNSCache()
