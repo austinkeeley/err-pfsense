@@ -34,7 +34,8 @@ def log_thread(bot):
 
             # Give the resolver a few seconds
             sleep(bot.config.get('DELAY', 2))
-            print(entry)
+            bot.send(bot.default_identifier, str(entry))
+            #print(entry)
 
         except Exception as e:
             print(e)
