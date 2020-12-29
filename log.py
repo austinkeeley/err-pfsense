@@ -106,6 +106,7 @@ class FirewallLogEntry(LogEntry):
 class DHCPDLogEntry(LogEntry):
 
     def __init__(self, line):
+        super().__init__()
         self.line = line.split('dhcpd: ')[1]
 
     def __str__(self):
