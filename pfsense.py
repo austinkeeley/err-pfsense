@@ -6,7 +6,8 @@ from errbot import BotPlugin, botcmd, arg_botcmd, webhook
 import tailer
 
 from resolver import DNSCache
-from log import LogEntry
+#from log import FirewallLogEntry
+from log import LogParser
 
 CONFIG_TEMPLATE = {
     'LOG_FILE': '/does/not/exist',  # pfSense log file to display
@@ -21,10 +22,11 @@ def log_thread(bot):
 
     bot.send(bot.default_identifier, f"Starting thread using {bot.config['LOG_FILE']}")
     bot.running = True
+    parser = LogParser()
 
     for line in tailer.follow(open(bot.config['LOG_FILE'], 'r')):
         try:
-            entry = LogEntry(line)
+            entry = parser.parse(line)
 
             if bot.config.get('REVERSE_DNS_LOOKUP', True):
                 bot.dns_cache.resolve(entry.src_ip)

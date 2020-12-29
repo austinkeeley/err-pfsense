@@ -2,16 +2,40 @@ ICMP = 1
 TCP = 6
 UDP = 17
 
-class LogEntry(object):
+class LogParser:
+    """Parses a line and returns the formatted entry"""
+
+    def parse(self, line):
+        try:
+            #date, hostname, process, content = line.split(' ')
+            tokens = line.split(' ')
+            process = tokens[2]
+            if process == 'filterlog:':
+                return FirewallLogEntry(line)
+            elif process == 'dhcpd:':
+                return DHCPDLogEntry(line)
+            else:
+                return f'Unknown process name {process}'
+        except ValueError as e:
+            print(f'Could not parse line: {line}')
+            return f'ERROR: Could not parse line {line}'
+
+class LogEntry:
+    def __init__(self):
+        self.src_ip = None
+        self.dst_ip = None
+
+class FirewallLogEntry(LogEntry):
 
     def field_iter(self, line):
         for token in line.split(','):
             yield token
 
-
     def __init__(self, line):
         """Parses a line such as·
          2019-07-20T14:29:41+00:00 pfsense1.flavortown.space filterlog: 101,,,1558485159,bge1,match,block,in,4,0x0,,63,35995,0,DF,6,tcp,60,192.168.3.13,172.217.7.132,33374,8080,0,S,1414818328,,64240,,mss;sackOK;TS;nop;wscale"""
+
+        super().__init__()
 
         # Split the line to get the actual syslog content
         date, hostname, process, content = line.split(' ')
@@ -78,6 +102,14 @@ class LogEntry(object):
         else:
             return f'Protocol not handled: {self.ipv4_protocol_id}'
 
+
+class DHCPDLogEntry(LogEntry):
+
+    def __init__(self, line):
+        self.line = line.split('dhcpd: ')[1]
+
+    def __str__(self):
+        return self.line
 
 
 if __name__ == '__main__':
