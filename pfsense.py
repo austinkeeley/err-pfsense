@@ -22,33 +22,38 @@ def log_thread(bot):
 
     bot.send(bot.default_identifier, f"Starting thread using {bot.config['LOG_FILE']}")
     bot.running = True
-    parser = LogParser()
+    parser = LogParser(bot.dns_cache)
 
     for line in tailer.follow(open(bot.config['LOG_FILE'], 'r')):
         try:
             entry = parser.parse(line)
-
-            if bot.config.get('REVERSE_DNS_LOOKUP', True):
-                if entry.src_ip:
-                    bot.dns_cache.resolve(entry.src_ip)
-                if entry.dst_ip:
-                    bot.dns_cache.resolve(entry.dst_ip)
-
-                # Give the DNS resolver a few seconds
-                sleep(bot.config.get('DELAY', 2))
-
-                if entry.src_ip:
-                    entry.src_hostname = bot.dns_cache.resolve(entry.src_ip)
-                if entry.dst_ip:
-                    entry.dst_hostname = bot.dns_cache.resolve(entry.dst_ip)
-            bot.send(bot.default_identifier, str(entry))
-        except ValueError as e:
+        except Exception as e:
             print(e)
             raise e
-        except IndexError as e:
-            print(e)
-            raise e
-        # As we find more weird errors add them here.
+        #try:
+        #    entry = parser.parse(line)
+
+        #    if bot.config.get('REVERSE_DNS_LOOKUP', True):
+        #        if entry.src_ip:
+        #            bot.dns_cache.resolve(entry.src_ip)
+        #        if entry.dst_ip:
+        #            bot.dns_cache.resolve(entry.dst_ip)
+
+        #        # Give the DNS resolver a few seconds
+        #        sleep(bot.config.get('DELAY', 2))
+
+        #        if entry.src_ip:
+        #            entry.src_hostname = bot.dns_cache.resolve(entry.src_ip)
+        #        if entry.dst_ip:
+        #            entry.dst_hostname = bot.dns_cache.resolve(entry.dst_ip)
+        #    bot.send(bot.default_identifier, str(entry))
+        #except ValueError as e:
+        #    print(e)
+        #    raise e
+        #except IndexError as e:
+        #    print(e)
+        #    raise e
+        ## As we find more weird errors add them here.
 
 
 class Pfsense(BotPlugin):
