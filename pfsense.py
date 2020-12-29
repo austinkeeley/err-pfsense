@@ -10,9 +10,10 @@ from resolver import DNSCache
 from log import LogParser
 
 CONFIG_TEMPLATE = {
-    'LOG_FILE': '/does/not/exist',  # pfSense log file to display
-    'DELAY': 2,                     # Delay, in seconds, to give the DNS resolver time to resolve
-    'REVERSE_DNS_LOOKUP': True      # Do reverse DNS lookup on IP addresses
+    'LOG_FILE': '/does/not/exist',     # pfSense log file to display
+    'DELAY': 2,                        # Delay, in seconds, to give the DNS resolver time to resolve
+    'REVERSE_DNS_LOOKUP': True,        # Do reverse DNS lookup on IP addresses
+    'DEFAULT_IDENTIFIER_STR': '#bots'  # Where to send the log entry messages
 }
 
 def log_thread(bot):
@@ -87,19 +88,23 @@ class Pfsense(BotPlugin):
         You should delete it if you're not using it to override any default behaviour
         """
         super(Pfsense, self).activate()
-        self.default_identifier = self.build_identifier('#flavortown')
+        print('in activate')
+        self.default_identifier = self.build_identifier(self.config.get('DEFAULT_IDENTIFIER_STR', ''))
         self.thread = threading.Thread(target=log_thread, args=(self,))
 
         self.running = False   # is running and displaying
         self.dns_cache = DNSCache()
         self.dns_cache.start()
+        print('done activate')
 
     def configure(self, configuration):
+        print('in configure')
         if configuration is not None and configuration != {}:
             config = dict(chain(CONFIG_TEMPLATE.items(), configuration.items()))
         else:
             config = CONFIG_TEMPLATE
         super(Pfsense, self).configure(config)
+        print('done configure')
 
     def deactivate(self):
         """
