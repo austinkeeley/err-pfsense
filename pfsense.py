@@ -1,5 +1,4 @@
 from itertools import chain
-import logging
 import threading
 from time import sleep
 from os import path
@@ -8,7 +7,6 @@ from errbot import BotPlugin, botcmd, arg_botcmd, webhook, ValidationException
 import tailer
 
 from resolver import DNSCache
-#from log import FirewallLogEntry
 from log import LogParser
 
 CONFIG_TEMPLATE = {
@@ -19,14 +17,16 @@ CONFIG_TEMPLATE = {
 }
 
 def log_thread(bot):
-    if not bot.config:
-        bot.send(bot.default_identifier, 'Not configured')
-        return
 
-    bot.send(bot.default_identifier, f"Starting thread using {bot.config['LOG_FILE']}")
-    bot.running = True
+    log_file = bot.config.get('LOG_FILE')
+    default_identifier = bot.config.get('DEFAULT_IDENTIFIER_STR')
+    reverse_dns_lookup = bot.config.get('REVERSE_DNS_LOOKUP', False)
 
-    if bot.config.get('REVERSE_DNS_LOOKUP', False):
+    identifier = bot.build_identifier(default_identifier)
+
+    bot.send(identifier, f'Starting thread using {log_file}')
+
+    if reverse_dns_lookup:
         parser = LogParser(bot.dns_cache)
     else:
         parser = LogParser(None)
@@ -34,15 +34,15 @@ def log_thread(bot):
     for line in tailer.follow(open(bot.config.get('LOG_FILE'), 'r')):
         try:
             entry = parser.parse(line)
-            if not entry:
+            if not entry:  # The parse method will return None if it thinks we won't care about the line
                 continue
 
             # Give the resolver a few seconds
             sleep(bot.config.get('DELAY', 2))
-            bot.send(bot.default_identifier, str(entry))
+            bot.send(identifier, str(entry))
 
         except Exception as e:
-            print(e)
+            bot.log.error(e)
             raise e
 
 
@@ -55,6 +55,7 @@ class Pfsense(BotPlugin):
     def start_log(self, message, args):
         """Starts displaying the logs"""
         if not self.running:
+            self.running = True
             self.thread.start()
             return 'Starting'
         else:
@@ -62,23 +63,31 @@ class Pfsense(BotPlugin):
 
     @botcmd
     def stop_log(self, message, args):
-        pass
+        if not self.running:
+            return 'Not running'
+        self.running = False
+        return 'Stopped'
 
     def activate(self):
         """
         Triggers on plugin activation
         """
         super(Pfsense, self).activate()
-        self.default_identifier = self.build_identifier(self.config.get('DEFAULT_IDENTIFIER_STR', ''))
+        default_identifier = self.config.get('DEFAULT_IDENTIFIER_STR', '')
+        if not default_identifier:
+            self.log.warn('No default identifier set')
+
+        self.default_identifier = self.build_identifier(default_identifier)
         self.thread = threading.Thread(target=log_thread, args=(self,))
 
-        self.running = False   # is running and displaying
         self.dns_cache = DNSCache()
         self.dns_cache.start()
+        self.running = False
 
     def configure(self, configuration):
         if configuration is not None and configuration != {}:
             config = dict(chain(CONFIG_TEMPLATE.items(), configuration.items()))
+            print(config)
         else:
             config = CONFIG_TEMPLATE
         super(Pfsense, self).configure(config)
@@ -94,8 +103,6 @@ class Pfsense(BotPlugin):
     def get_configuration_template(self):
         """
         Defines the configuration structure this plugin supports
-
-        You should delete it if your plugin doesn't use any configuration like this
         """
         return CONFIG_TEMPLATE
 
@@ -103,31 +110,25 @@ class Pfsense(BotPlugin):
         """
         Triggers when the configuration is checked, shortly before activation
         """
-        #super(Pfsense, self).check_configuration(configuration)
-        if not path.isfile(configuration.get('LOG_FILE')):
+        # If we specified a LOG_FILE path, check to see if it actually exists
+        if configuration.get('LOG_FILE') and not path.isfile(configuration.get('LOG_FILE')):
             raise ValidationException(f'Could not find file {configuration["LOG_FILE"]}')
 
     def callback_connect(self):
         """
         Triggers when bot is connected
-
-        You should delete it if you're not using it to override any default behaviour
         """
         pass
 
     def callback_message(self, message):
         """
         Triggered for every received message that isn't coming from the bot itself
-
-        You should delete it if you're not using it to override any default behaviour
         """
         pass
 
     def callback_botmessage(self, message):
         """
         Triggered for every message that comes from the bot itself
-
-        You should delete it if you're not using it to override any default behaviour
         """
         pass
 
