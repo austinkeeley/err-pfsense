@@ -87,7 +87,6 @@ class Pfsense(BotPlugin):
     def configure(self, configuration):
         if configuration is not None and configuration != {}:
             config = dict(chain(CONFIG_TEMPLATE.items(), configuration.items()))
-            print(config)
         else:
             config = CONFIG_TEMPLATE
         super(Pfsense, self).configure(config)

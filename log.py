@@ -1,4 +1,9 @@
+"""Log entry types"""
+
 import logging
+import re
+
+from mac_vendor_lookup import MacLookup
 
 ICMP = 1
 TCP = 6
@@ -28,7 +33,7 @@ class LogParser:
                 return LogEntry(f'Unknown process name {process}')
         except ValueError as e:
             logging.error(f'Could not parse line: {line}')
-            return f'ERROR: Could not parse line {line}'
+            return LogEntry(f'ERROR: Could not parse line {line}')
 
 
 class LogEntry:
@@ -124,9 +129,20 @@ class FirewallLogEntry(LogEntry):
 
 class DHCPDLogEntry(LogEntry):
 
+    mac_regex = re.compile(r'''([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})''')
+    mac_lookup = MacLookup()
+
     def __init__(self, line):
         super().__init__(line)
         self.line = line.split('dhcpd: ')[1]
+        result = re.search(DHCPDLogEntry.mac_regex, line)
+        if result:
+            mac = result.group(0)
+            try:
+                vendor = DHCPDLogEntry.mac_lookup.lookup(mac)
+                self.line += f' ({vendor})'
+            except:
+                self.line += ' (unknown vendor)'
 
     def __str__(self):
         return self.line

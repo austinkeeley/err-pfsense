@@ -1,2 +1,3 @@
 tailer==0.4.1
 dnspython==2.0.0
+mac-vendor-lookup>=0.1.11
