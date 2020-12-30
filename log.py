@@ -56,7 +56,7 @@ class FirewallLogEntry(LogEntry):
 
         # Split the line to get the actual syslog content
         #date, hostname, process, content = line.split(' ')
-        content = line
+        tag, content = line.split(' ')
 
         fields = self.field_iter(content)
         self.rule_num = next(fields)
