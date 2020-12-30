@@ -30,4 +30,4 @@ Begin the log streaming with the command
 | `LOG_FILE`               | string  | Path to the syslog file to display                             |
 | `REVERSE_DNS_LOOKUP`     | Boolean | Perform the IP to hostname lookup                              |
 | `DELAY`                  | integer | Delay, in seconds, to allow the DNS lookup to happen           |
-| `DEFAULT_IDENTIFIER_STR` | integer | Errbot identifier string to send log messages to, e.g. `#bots` |
+| `DEFAULT_IDENTIFIER_STR` | string  | Errbot identifier string to send log messages to, e.g. `#bots` |
