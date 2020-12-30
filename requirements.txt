@@ -1,3 +1,5 @@
 tailer==0.4.1
 dnspython==2.0.0
 mac-vendor-lookup>=0.1.11
+parse==1.18.0
+syslogmp==0.2.2

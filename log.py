@@ -4,6 +4,7 @@ import logging
 import re
 
 from mac_vendor_lookup import MacLookup
+from syslogmp import parse
 
 ICMP = 1
 TCP = 6
@@ -16,24 +17,24 @@ class LogParser:
         self.resolver = resolver
 
     def parse(self, line):
-        try:
-            tokens = line.split(' ')
-            process = tokens[2]
-            if process == 'filterlog:':
-                return FirewallLogEntry(line, self.resolver)
-            elif process == 'dhcpd:':
-                e = DHCPDLogEntry(line)
-                # We only care about DHCPACK and DHCPRequest. All other lease logs
-                # are not interesting.
-                if 'DHCPACK' in str(e)  or 'DHCPREQUEST' in str(e):
-                    return e
-                else:
-                    return None
+        """Turns the line into a LogEntry"""
+
+        # syslogmp expects a byte string
+        line_bytes = str.encode(line)
+        syslog_msg = parse(line_bytes)
+
+        if b'filterlog:' in syslog_msg.message:
+            return FirewallLogEntry(syslog_msg.message.decode('utf-8'), self.resolver)
+        elif b'dhcpd:' in syslog_msg.message:
+            e = DHCPDLogEntry(line)
+            # We only care about DHCPACK and DHCPRequest. All other lease logs
+            # are not interesting.
+            if 'DHCPACK' in str(e)  or 'DHCPREQUEST' in str(e):
+                return e
             else:
-                return LogEntry(f'Unknown process name {process}')
-        except ValueError as e:
-            logging.error(f'Could not parse line: {line}')
-            return LogEntry(f'ERROR: Could not parse line {line}')
+                return None
+        else:
+            return LogEntry(f'Cannot process line {line}')
 
 
 class LogEntry:
@@ -54,7 +55,8 @@ class FirewallLogEntry(LogEntry):
         super().__init__(line)
 
         # Split the line to get the actual syslog content
-        date, hostname, process, content = line.split(' ')
+        #date, hostname, process, content = line.split(' ')
+        content = line
 
         fields = self.field_iter(content)
         self.rule_num = next(fields)
