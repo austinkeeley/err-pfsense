@@ -15,7 +15,13 @@ class LogParser:
             if process == 'filterlog:':
                 return FirewallLogEntry(line, self.resolver)
             elif process == 'dhcpd:':
-                return DHCPDLogEntry(line)
+                e = DHCPDLogEntry(line)
+                # We only care about DHCPACK and DHCPRequest. All other lease logs
+                # are not interesting.
+                if 'DHCPACK' in str(e)  or 'DHCPREQUEST' in str(e):
+                    return e
+                else:
+                    return None
             else:
                 return LogEntry(f'Unknown process name {process}')
         except ValueError as e:

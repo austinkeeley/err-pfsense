@@ -32,6 +32,8 @@ def log_thread(bot):
     for line in tailer.follow(open(bot.config.get('LOG_FILE'), 'r')):
         try:
             entry = parser.parse(line)
+            if not entry:
+                continue
 
             # Give the resolver a few seconds
             sleep(bot.config.get('DELAY', 2))
