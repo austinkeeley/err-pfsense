@@ -1,3 +1,5 @@
+import logging
+
 ICMP = 1
 TCP = 6
 UDP = 17
@@ -25,7 +27,7 @@ class LogParser:
             else:
                 return LogEntry(f'Unknown process name {process}')
         except ValueError as e:
-            print(f'Could not parse line: {line}')
+            logging.error(f'Could not parse line: {line}')
             return f'ERROR: Could not parse line {line}'
 
 

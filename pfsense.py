@@ -1,8 +1,10 @@
 from itertools import chain
+import logging
 import threading
 from time import sleep
+from os import path
 
-from errbot import BotPlugin, botcmd, arg_botcmd, webhook
+from errbot import BotPlugin, botcmd, arg_botcmd, webhook, ValidationException
 import tailer
 
 from resolver import DNSCache
@@ -38,35 +40,10 @@ def log_thread(bot):
             # Give the resolver a few seconds
             sleep(bot.config.get('DELAY', 2))
             bot.send(bot.default_identifier, str(entry))
-            #print(entry)
 
         except Exception as e:
             print(e)
             raise e
-        #try:
-        #    entry = parser.parse(line)
-
-        #    if bot.config.get('REVERSE_DNS_LOOKUP', True):
-        #        if entry.src_ip:
-        #            bot.dns_cache.resolve(entry.src_ip)
-        #        if entry.dst_ip:
-        #            bot.dns_cache.resolve(entry.dst_ip)
-
-        #        # Give the DNS resolver a few seconds
-        #        sleep(bot.config.get('DELAY', 2))
-
-        #        if entry.src_ip:
-        #            entry.src_hostname = bot.dns_cache.resolve(entry.src_ip)
-        #        if entry.dst_ip:
-        #            entry.dst_hostname = bot.dns_cache.resolve(entry.dst_ip)
-        #    bot.send(bot.default_identifier, str(entry))
-        #except ValueError as e:
-        #    print(e)
-        #    raise e
-        #except IndexError as e:
-        #    print(e)
-        #    raise e
-        ## As we find more weird errors add them here.
 
 
 class Pfsense(BotPlugin):
@@ -77,7 +54,11 @@ class Pfsense(BotPlugin):
     @botcmd
     def start_log(self, message, args):
         """Starts displaying the logs"""
-        self.thread.start()
+        if not self.running:
+            self.thread.start()
+            return 'Starting'
+        else:
+            return 'Already running'
 
     @botcmd
     def stop_log(self, message, args):
@@ -86,27 +67,21 @@ class Pfsense(BotPlugin):
     def activate(self):
         """
         Triggers on plugin activation
-
-        You should delete it if you're not using it to override any default behaviour
         """
         super(Pfsense, self).activate()
-        print('in activate')
         self.default_identifier = self.build_identifier(self.config.get('DEFAULT_IDENTIFIER_STR', ''))
         self.thread = threading.Thread(target=log_thread, args=(self,))
 
         self.running = False   # is running and displaying
         self.dns_cache = DNSCache()
         self.dns_cache.start()
-        print('done activate')
 
     def configure(self, configuration):
-        print('in configure')
         if configuration is not None and configuration != {}:
             config = dict(chain(CONFIG_TEMPLATE.items(), configuration.items()))
         else:
             config = CONFIG_TEMPLATE
         super(Pfsense, self).configure(config)
-        print('done configure')
 
     def deactivate(self):
         """
@@ -127,12 +102,10 @@ class Pfsense(BotPlugin):
     def check_configuration(self, configuration):
         """
         Triggers when the configuration is checked, shortly before activation
-
-        Raise a errbot.ValidationException in case of an error
-
-        You should delete it if you're not using it to override any default behaviour
         """
-        super(Pfsense, self).check_configuration(configuration)
+        #super(Pfsense, self).check_configuration(configuration)
+        if not path.isfile(configuration.get('LOG_FILE')):
+            raise ValidationException(f'Could not find file {configuration["LOG_FILE"]}')
 
     def callback_connect(self):
         """

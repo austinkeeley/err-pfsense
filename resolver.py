@@ -1,4 +1,5 @@
 import threading
+import logging
 
 import dns
 from dns import reversename, resolver
@@ -12,20 +13,20 @@ class DNSCache(object):
         self.queue = Queue()
 
     def start(self):
-        print('Starting DNSCache')
+        logging.info('Starting DNSCache')
         t = threading.Thread(target=self.resolve_queue_thread)
         t.start()
 
     def resolve_queue_thread(self):
-        print('Running resolve queue thread')
+        logging.debug('Running resolve queue thread')
         while True:
             ip_address, cb = self.queue.get(True)
-            print('Received request to resolve {}'.format(ip_address))
+            logging.debug('Received request to resolve {}'.format(ip_address))
             rev_name = reversename.from_address(ip_address)
             try:
                 hostname = str(resolver.query(rev_name, "PTR")[0])
                 self.cache[ip_address] = (hostname, 'resolved')
-                print('Done resolving! {} --> {}'.format(ip_address, hostname))
+                logging.debug('Done resolving! {} --> {}'.format(ip_address, hostname))
                 if cb:
                     cb(ip_address, hostname)
             except resolver.NoNameservers:
@@ -63,7 +64,7 @@ class DNSCache(object):
             ip_address - The IP to resolve
             cb - Callback that will receive ip, hostname
         """
-        print('Adding {} to resolve queue'.format(ip_address))
+        logging.debug('Adding {} to resolve queue'.format(ip_address))
         self.cache[ip_address] = (None, 'queued')
         self.queue.put((ip_address, cb))
 
