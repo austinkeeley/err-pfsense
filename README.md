@@ -1,7 +1,7 @@
 err-pfsense
 ============
 
-An Errbot plugin for displaying pfSense firewall and DHCP logs.
+An Errbot plugin for displaying pfSense logs. Currently supports firewall and DHCP logs.
 
 ## Install
 
@@ -13,7 +13,7 @@ Run the following Errbot command
 
 Configure the bot by running 
 
-    !plugin config pfsense {'LOG_FILE': '/path/to/your/syslog/file'}
+    !plugin config pfsense {'LOG_FILE': '/path/to/your/logfile', 'DEFAULT_IDENTIFIER_STR': '#bots' }
 
 The plugin expects the logs to be in the RFC3164 "BSD Style" syslog output, e.g.
 
