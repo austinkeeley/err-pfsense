@@ -13,7 +13,8 @@ CONFIG_TEMPLATE = {
     'LOG_FILE': '/does/not/exist',     # pfSense log file to display
     'DELAY': 2,                        # Delay, in seconds, to give the DNS resolver time to resolve
     'REVERSE_DNS_LOOKUP': True,        # Do reverse DNS lookup on IP addresses
-    'DEFAULT_IDENTIFIER_STR': '#bots'  # Where to send the log entry messages
+    'DEFAULT_IDENTIFIER_STR': '#bots', # Where to send the log entry messages
+    'IGNORE_REGEX': []
 }
 
 def log_thread(bot):
@@ -21,13 +22,14 @@ def log_thread(bot):
     log_file = bot.config.get('LOG_FILE')
     default_identifier = bot.config.get('DEFAULT_IDENTIFIER_STR')
     reverse_dns_lookup = bot.config.get('REVERSE_DNS_LOOKUP', False)
+    ignore_regex = bot.config.get('IGNORE_REGEX', [])
 
     identifier = bot.build_identifier(default_identifier)
 
     bot.send(identifier, f'Starting thread using {log_file}')
 
     if reverse_dns_lookup:
-        parser = LogParser(bot.dns_cache)
+        parser = LogParser(bot.dns_cache, ignore_regex)
     else:
         parser = LogParser(None)
 

@@ -13,11 +13,17 @@ UDP = 17
 class LogParser:
     """Parses a line and returns the formatted entry"""
 
-    def __init__(self, resolver):
+    def __init__(self, resolver, ignore_regex=None):
         self.resolver = resolver
+        self.regex_patterns = [re.compile(r) for r in ignore_regex] if ignore_regex else []
 
     def parse(self, line):
         """Turns the line into a LogEntry"""
+
+        # Are we ignoring this?
+        for p in self.regex_patterns:
+            if p.search(line):
+                return None
 
         # syslogmp expects a byte string
         line_bytes = str.encode(line)
