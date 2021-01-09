@@ -120,11 +120,11 @@ class FirewallLogEntry(LogEntry):
     def __str__(self):
         color = r'''{:color='red'}'''
         if self.ipv4_protocol_id == UDP:
-            return f'{self.ipv4_protocol_text} **{self.src_hostname if self.src_hostname else self.src_ip}:{self.src_port} --> {self.dst_hostname if self.dst_hostname else self.dst_ip}:{self.dst_port}**{color} -- rule {self.rule_num}'
+            return f'{self.ipv4_protocol_text} **{self.src_hostname if self.src_hostname else ""} {self.src_ip}:{self.src_port} --> {self.dst_hostname if self.dst_hostname else ""} {self.dst_ip}:{self.dst_port}**{color} -- rule {self.rule_num}'
         elif self.ipv4_protocol_id == TCP:
-            return f'{self.ipv4_protocol_text} **{self.src_hostname if self.src_hostname else self.src_ip}:{self.src_port} --> {self.dst_hostname if self.dst_hostname else self.dst_ip}:{self.dst_port}**{color} {self.tcp_flags} -- rule {self.rule_num}'
+            return f'{self.ipv4_protocol_text} **{self.src_hostname if self.src_hostname else ""} {self.src_ip}:{self.src_port} --> {self.dst_hostname if self.dst_hostname else ""} {self.dst_ip}:{self.dst_port}**{color} {self.tcp_flags} -- rule {self.rule_num}'
         elif self.ipv4_protocol_id == ICMP:
-            return f'{self.ipv4_protocol_text} **{self.src_hostname if self.src_hostname else self.src_ip} --> {self.dst_hostname if self.dst_hostname else self.dst_ip}**{color} {self.icmp_type} -- rule {self.rule_num}'
+            return f'{self.ipv4_protocol_text} **{self.src_hostname if self.src_hostname else ""} {self.src_ip} --> {self.dst_hostname if self.dst_hostname else ""} {self.dst_ip}**{color} {self.icmp_type} -- rule {self.rule_num}'
 
         else:
             return f'Protocol not handled: {self.ipv4_protocol_id}'
